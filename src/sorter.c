@@ -7,7 +7,7 @@
 char *infile;
 FILE *inptr;
 
-int console_read(int argc, char* argv[]) {  // функция обработки команды с консоли
+int console_read(char* argv[]) {  // функция обработки команды с консоли
     // проверка наличия названия текстового файла в команде пользователя
 	char *last_four = "init";
 	size_t len = strlen(argv[1]);
@@ -23,13 +23,15 @@ int console_read(int argc, char* argv[]) {  // функция обработки
 }
 
 size_t strings_count(void)  { // функция подсчета количества строк для вывода в поток
-	int c;
+	int c = 0; 
+	int endfile = EOF;
 	size_t lines_count = 0; 
 	while (!ferror(inptr) && !feof(inptr)) {
 		c = fgetc(inptr);
+		endfile = c;
 		if (c == '\n') ++lines_count;
 	}
-	if (c != '\n') ++lines_count;
+	if (endfile != '\n' && endfile != EOF) ++lines_count;
 	if (lines_count > MAX_STRING_NUM) lines_count = MAX_STRING_NUM; // Нам нужно 100 строк или меньше
 	return lines_count;
 }
@@ -72,7 +74,7 @@ int main(int argc, char* argv[]) {
         return 0;
     }
     // Чтение команды ввода с консоли и обработка ошибок в этой команде
-    if (console_read(argc, argv) == -1) {
+    if (console_read(argv) == -1) {
         return -1;
     }
     inptr = fopen(infile, "r");   // Открытие файла на чтение
@@ -94,7 +96,7 @@ int main(int argc, char* argv[]) {
     	sort(strings_array, strings_number);  // вызов функции сортировки
 	}
 	for (size_t i = 0; i < strings_number; i++) {  // запись строк в поток вывода и освобождение памяти
-		fprintf(stdout, strings_array[i]);
+		puts(strings_array[i]);
 		free(strings_array[i]);
     }
     free(strings_array);    
