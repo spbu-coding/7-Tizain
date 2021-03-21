@@ -1,50 +1,44 @@
 include CONFIG.cfg
 
 CC = gcc
-LD = gcc
-CFLAGS = -g -O2 -Wall -Wextra -Wpedantic -Werror
-LDFLAGS =
 
-EXEC = $(BUILD_DIR)/$(NAME)
-SOURCE = $(SOURCE_DIR)/$(NAME).c
-OBJS = $(EXEC).o
+EXECUTABLE = $(BUILD_DIR)/$(NAME)
+SOURCES = $(SOURCE_DIR)/$(NAME).c
+OBJECTS = $(EXECUTABLE).o
 
-TESTS_IN = $(sort $(wildcard $(TEST_DIR)/*.in))
+TESTS_IN = $(wildcard $(TEST_DIR)/*.in)
 TESTS_NAMES = $(TESTS_IN:$(TEST_DIR)/%.in=%)
-TESTS_OUT = $(sort $(wildcard $(TEST_DIR)/*.out))
+TESTS_OUT = $(wildcard $(TEST_DIR)/*.out)
 SORT_OUT = $(TESTS_OUT:$(TEST_DIR)/%=$(BUILD_DIR)/%)
-TEST_LOG = $(TESTS_OUT:$(TEST_DIR)/%.out=$(BUILD_DIR)/%.log)
 
-.PHONY: clean all check
+.PHONY: all check clean
 
-all: $(EXEC)
+all: $(EXECUTABLE)
 
-$(OBJS): $(SOURCE) | $(BUILD_DIR)
-	$(CC) -c $(CFLAGS) -o $@ $<
+$(EXECUTABLE): $(OBJECTS)
+	$(CC) -o $@ $<
 
-$(EXEC): $(OBJS)
-	$(LD) $(LDFLAGS) -o $@ $<
+$(OBJECTS): $(SOURCES) | $(BUILD_DIR)
+	$(CC) -c -o $@ $<
 
-$(BUILD_DIR): $(SOURCE)
-	@mkdir -p $@
+$(BUILD_DIR): $(SOURCES)
+	mkdir -p $@
+
+check: $(BUILD_DIR)/log
+	@exit $$(cat $<)
+
+$(BUILD_DIR)/log: $(EXECUTABLE) $(TESTS_IN) $(TESTS_OUT)
+	@test_check=0 ; \
+	for test in $(TESTS_NAMES) ; do \
+	  ./$< $(TEST_DIR)/$$test.in > $(BUILD_DIR)/$$test.out ; \
+	  if cmp -s $(BUILD_DIR)/$$test.out $(TEST_DIR)/$$test.out ;  then \
+	  	echo test $$test passed ; \
+	  else \
+	    echo test $$test failed ; \
+	    test_check=1 ; \
+	  fi \
+	done ;\
+	echo $$test_check > $@
 
 clean:
 	rm -rf $(BUILD_DIR)/
-
-check: $(TEST_LOG)
-	@test_check=0 ; \
-	for test in $(TESTS_NAMES) ; do \
-		if [ "$$(cat $(BUILD_DIR)/$$test.log)" = "1" ] ; then \
-			echo test $$test failed ; \
-			test_check=1 ; \
-		else \
-			echo test $$test passed ; \
-		fi \
-	done ; \
-    exit $$test_check
-
-$(TEST_LOG): $(BUILD_DIR)/%.log :$(BUILD_DIR)/%.out $(TEST_DIR)/%.out
-	@cmp -s $^ ; echo $$? > $@
-
-$(SORT_OUT): $(BUILD_DIR)/%.out : $(TEST_DIR)/%.in $(EXEC)
-	@./$(EXEC) $< > $@
