@@ -2,38 +2,39 @@ include CONFIG.cfg
 
 CC = gcc
 LD = gcc
-TARGETS = $(BUILD_DIR)/$(NAME)
+EXEC = $(BUILD_DIR)/$(NAME)
 OBJ = $(BUILD_DIR)/sorter.o  
-LOG = $(patsubst $(TEST_DIR)/%.in, $(BUILD_DIR)/%.log, $(wildcard $(TEST_DIR)/*.in))
-ERR = $(BUILD_DIR)/err.err
+LOG = $(patsubst $(TEST_DIR)/%.in, $(TEST_DIR)/%.log, $(wildcard $(TEST_DIR)/*.in))
 
 .PHONY: all check clean
 
-all: $(TARGETS)
+all: $(EXEC)
 
-$(TARGETS) : $(OBJ) | $(BUILD_DIR)
-	$(LD) $^ -o $@
+$(EXEC) : $(OBJ)
+	$(LD) $(LDFLAGS) $^ -o $@
 
-$(OBJ): $(BUILD_DIR)/%.o: $(SOURCE_DIR)/*.c | $(BUILD_DIR)
+$(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.c | $(BUILD_DIR)
 	$(CC) -c $< -o $@
 
 $(BUILD_DIR):	
 	@mkdir -p $@ 
 
 check: $(LOG)
-	@if [ -f $(ERR) ]; then \
-		$(RM) $(ERR); \
-		exit 1; \
-	fi
+	@for n in $^; \
+	do \
+  		if echo 2 | cmp -s $$n; then \
+ 	  		exit 2; \
+  	  	fi; \
+	done
 	
-$(LOG): $(BUILD_DIR)/%.log: $(TEST_DIR)/%.in $(TEST_DIR)/%.out $(TARGETS)
-	@$(TARGETS) $< >$@
-	@if cmp -s $(TEST_DIR)/$*.out $@; then \
+$(LOG): $(TEST_DIR)/%.log: $(TEST_DIR)/%.in $(TEST_DIR)/%.out $(EXEC)
+    @if $(EXEC) $< | cmp -s $(TEST_DIR)/$*.out; then \
 		echo Test $* - was successful; \
+        echo 1 > $@; \
 	else \
 		echo Test $* - was failed; \
-		touch $(ERR); \
+		echo 2 > $@; \
 	fi
 
 clean:
-	$(RM) $(OBJ) $(LOG) $(TARGETS) $(ERR)
+	$(RM) $(OBJ) $(LOG) $(EXEC) 
