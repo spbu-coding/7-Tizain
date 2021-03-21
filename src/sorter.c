@@ -7,20 +7,6 @@
 char *infile;
 FILE *inptr;
 
-int console_read(char* argv[]) {  // функция обработки команды с консоли
-    // проверка наличия названия текстового файла в команде пользователя
-	char *last_four = "init";
-	size_t len = strlen(argv[1]);
-	if (len > 4) {
-		last_four = &argv[1][len-4];
-	}
-	if (strcmp (last_four, ".txt") == 0) {
-		infile = argv[1]; 
-	} else {
-		return -1;
-	}
-    return 0;
-}
 
 size_t strings_count(void)  { // функция подсчета количества строк для вывода в поток
 	int c = 0; 
@@ -74,9 +60,7 @@ int main(int argc, char* argv[]) {
         return 0;
     }
     // Чтение команды ввода с консоли и обработка ошибок в этой команде
-    if (console_read(argv) == -1) {
-        return -1;
-    }
+	infile = argv[1]; 
     inptr = fopen(infile, "r");   // Открытие файла на чтение
     if (inptr == NULL) {
         printf("Could not open %s.\n", infile);
