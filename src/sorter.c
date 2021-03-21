@@ -88,7 +88,7 @@ int main(int argc, char* argv[]) {
     char **strings_array = (char**)malloc(strings_number * (MAX_STRING_LEN + 2)); //+2 (для fgets)возможные символы новой и нулевой строки
     for (size_t i = 0; i < strings_number; i++) {
         strings_array[i] = (char*)malloc(MAX_STRING_LEN + 2);
-        fgets(strings_array[i], MAX_STRING_LEN, inptr); 
+        if (fgets(strings_array[i], MAX_STRING_LEN, inptr) != NULL); 
     }
     fclose(inptr);
 	delete_punctuation(strings_array, strings_number);  // вызов функции удаления знаков препинания
