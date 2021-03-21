@@ -28,7 +28,7 @@ check: $(LOG)
 	done
 	
 $(LOG): $(TEST_DIR)/%.log: $(TEST_DIR)/%.in $(TEST_DIR)/%.out $(EXEC)
-    @if $(EXEC) $< | cmp -s $(TEST_DIR)/$*.out; then \
+    @if $(EXEC) $< | cmp -s $(TEST_DIR)/$*.out $@; then \
 		echo Test $* - was successful; \
         echo 1 > $@; \
 	else \
