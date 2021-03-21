@@ -69,9 +69,9 @@ int main(int argc, char* argv[]) {
 	size_t strings_number = strings_count();   // количество строк для вывода в поток
 	rewind(inptr);
     // выделение памяти для массива, который будет содержать строки из файла и заполнение его
-    char **strings_array = (char**)malloc(strings_number * (MAX_STRING_LEN)); //+2 (для fgets)возможные символы новой и нулевой строки
+    char **strings_array = (char**)malloc(strings_number * (MAX_STRING_LEN+2)); //+2 (для fgets)возможные символы новой и нулевой строки
     for (size_t i = 0; i < strings_number; i++) {
-        strings_array[i] = (char*)malloc(MAX_STRING_LEN);
+        strings_array[i] = (char*)malloc(MAX_STRING_LEN+2);
         if (fgets(strings_array[i], MAX_STRING_LEN, inptr) == NULL)
 			break; 
     }
@@ -80,11 +80,13 @@ int main(int argc, char* argv[]) {
 	if (strings_number > 1)  { // пропустим сортировку, если строка всего одна
     	sort(strings_array, strings_number);  // вызов функции сортировки
 	}
+
 	for (size_t i = 0; i < strings_number; i++) {  // запись строк в поток вывода и освобождение памяти
-		printf("%s\n", strings_array[i]);
+		printf("%s", strings_array[i]);
 //		puts(strings_array[i]);
 		free(strings_array[i]);
     }
+
     free(strings_array);    
 
     return 0;
