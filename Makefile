@@ -2,49 +2,38 @@ include CONFIG.cfg
 
 CC = gcc
 LD = gcc
-CFLAGS = -g -O2 -Wall -Wextra -Wpedantic -Werror
-LDFLAGS =
+TARGETS = $(BUILD_DIR)/$(NAME)
+OBJ = $(BUILD_DIR)/main.o  
+LOG = $(patsubst $(TEST_DIR)/%.in, $(BUILD_DIR)/%.log, $(wildcard $(TEST_DIR)/*.in))
+ERR = $(BUILD_DIR)/err.err
 
-EXEC = $(BUILD_DIR)/$(NAME)
-SOURCE = $(SOURCE_DIR)/$(NAME).c
-OBJS = $(EXEC).o
+.PHONY: all check clean
 
-TESTS_IN = $(sort $(wildcard $(TEST_DIR)/*.in))
-TESTS_NAMES = $(TESTS_IN:$(TEST_DIR)/%.in=%)
-TESTS_OUT = $(sort $(wildcard $(TEST_DIR)/*.out))
-SORT_OUT = $(TESTS_OUT:$(TEST_DIR)/%=$(BUILD_DIR)/%)
-TEST_LOG = $(TESTS_OUT:$(TEST_DIR)/%.out=$(BUILD_DIR)/%.log)
+all: $(TARGETS)
 
-.PHONY: clean all check
+$(TARGETS) : $(OBJ) | $(BUILD_DIR)
+	$(LD) $^ -o $@
 
-all: $(EXEC)
+$(OBJ): $(BUILD_DIR)/%.o: $(SOURCE_DIR)/*.c | $(BUILD_DIR)
+	$(CC) -c $< -o $@
 
-$(OBJS): $(SOURCE) | $(BUILD_DIR)
-	$(CC) -c $(CFLAGS) -o $@ $<
+$(BUILD_DIR):	
+	@mkdir -p $@ 
 
-$(EXEC): $(OBJS)
-	$(LD) $(LDFLAGS) -o $@ $<
-
-$(BUILD_DIR): $(SOURCE)
-	@mkdir -p $@
+check: $(LOG)
+	@if [ -f $(ERR) ]; then \
+		$(RM) $(ERR); \
+		exit 1; \
+	fi
+	
+$(LOG): $(BUILD_DIR)/%.log: $(TEST_DIR)/%.in $(TEST_DIR)/%.out $(TARGETS)
+	@$(TARGETS) $< >$@
+	@if cmp -s $(TEST_DIR)/$*.out $@; then \
+		echo Test $* - was successful; \
+	else \
+		echo Test $* - was failed; \
+		touch $(ERR); \
+	fi
 
 clean:
-	rm -rf $(BUILD_DIR)/
-
-check: $(TEST_LOG)
-	@test_check=0 ; \
-	for test in $(TESTS_NAMES) ; do \
-		if [ "$$(cat $(BUILD_DIR)/$$test.log)" = "1" ] ; then \
-			echo test $$test failed ; \
-			test_check=1 ; \
-		else \
-			echo test $$test passed ; \
-		fi \
-	done ; \
-    exit $$test_check
-
-$(TEST_LOG): $(BUILD_DIR)/%.log :$(BUILD_DIR)/%.out $(TEST_DIR)/%.out
-	@cmp -s $^ ; echo $$? > $@
-
-$(SORT_OUT): $(BUILD_DIR)/%.out : $(TEST_DIR)/%.in $(EXEC)
-	@./$(EXEC) $< > $@
+	$(RM) $(OBJ) $(LOG) $(TARGETS) $(ERR)
