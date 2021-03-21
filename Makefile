@@ -1,44 +1,39 @@
 include CONFIG.cfg
 
 CC = gcc
-
-EXECUTABLE = $(BUILD_DIR)/$(NAME)
-SOURCES = $(SOURCE_DIR)/$(NAME).c
-OBJECTS = $(EXECUTABLE).o
-
-TESTS_IN = $(wildcard $(TEST_DIR)/*.in)
-TESTS_NAMES = $(TESTS_IN:$(TEST_DIR)/%.in=%)
-TESTS_OUT = $(wildcard $(TEST_DIR)/*.out)
-SORT_OUT = $(TESTS_OUT:$(TEST_DIR)/%=$(BUILD_DIR)/%)
+LD = gcc
+TARGETS = $(BUILD_DIR)/$(NAME)
+OBJ = $(BUILD_DIR)/sorter.o  
+LOG = $(patsubst $(TEST_DIR)/%.in, $(BUILD_DIR)/%.log, $(wildcard $(TEST_DIR)/*.in))
+ERR = $(BUILD_DIR)/err.err
 
 .PHONY: all check clean
 
-all: $(EXECUTABLE)
+all: $(TARGETS)
 
-$(EXECUTABLE): $(OBJECTS)
-	$(CC) -o $@ $<
+$(TARGETS) : $(OBJ) | $(BUILD_DIR)
+	$(LD) $^ -o $@
 
-$(OBJECTS): $(SOURCES) | $(BUILD_DIR)
-	$(CC) -c -o $@ $<
+$(OBJ): $(BUILD_DIR)/%.o: $(SOURCE_DIR)/*.c | $(BUILD_DIR)
+	$(CC) -c $< -o $@
 
-$(BUILD_DIR): $(SOURCES)
-	mkdir -p $@
+$(BUILD_DIR):	
+	@mkdir -p $@ 
 
-check: $(BUILD_DIR)/log
-	@exit $$(cat $<)
-
-$(BUILD_DIR)/log: $(EXECUTABLE) $(TESTS_IN) $(TESTS_OUT)
-	@test_check=0 ; \
-	for test in $(TESTS_NAMES) ; do \
-	  ./$< $(TEST_DIR)/$$test.in > $(BUILD_DIR)/$$test.out ; \
-	  if cmp -s $(BUILD_DIR)/$$test.out $(TEST_DIR)/$$test.out ;  then \
-	  	echo test $$test passed ; \
-	  else \
-	    echo test $$test failed ; \
-	    test_check=1 ; \
-	  fi \
-	done ;\
-	echo $$test_check > $@
+check: $(LOG)
+	@if [ -f $(ERR) ]; then \
+		$(RM) $(ERR); \
+		exit 1; \
+	fi
+	
+$(LOG): $(BUILD_DIR)/%.log: $(TEST_DIR)/%.in $(TEST_DIR)/%.out $(TARGETS)
+	@$(TARGETS) $< >$@
+	@if cmp -s $(TEST_DIR)/$*.out $@; then \
+		echo Test $* - was successful; \
+	else \
+		echo Test $* - was failed; \
+		touch $(ERR); \
+	fi
 
 clean:
-	rm -rf $(BUILD_DIR)/
+	$(RM) $(OBJ) $(LOG) $(TARGETS) $(ERR)
