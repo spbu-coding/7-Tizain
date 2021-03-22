@@ -31,12 +31,12 @@ check: $(LOG)
 	
 $(TEST_DIR)/%.log: $(TEST_DIR)/%.in $(TEST_DIR)/%.out $(EXEC)
     @if [ "$$(./$(EXEC) ./$<)" = "$$(cat $(word 2, $^))" ]; then \
-		echo "Test $* - was successful"; \
+		echo "Test $< - was successful"; \
         echo "$(PASSED)" > $@; \
 	else \
-		echo "Test $* - was failed"; \
+		echo "Test $< - was failed"; \
 		echo "$(FAILED)" > $@;
 	fi
 
 clean:
-	$(RM) $(OBJ) $(LOG) $(EXEC) 
+	rm -rf $(OBJ) $(LOG) $(EXEC) 
