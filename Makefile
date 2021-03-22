@@ -2,6 +2,8 @@ include CONFIG.cfg
 
 CC = gcc
 LD = gcc
+PASSED = ok
+FAILED= fail
 EXEC = $(BUILD_DIR)/$(NAME)
 OBJ = $(BUILD_DIR)/sorter.o  
 LOG = $(patsubst $(TEST_DIR)/%.in, $(TEST_DIR)/%.log, $(wildcard $(TEST_DIR)/*.in))
@@ -20,20 +22,20 @@ $(BUILD_DIR):
 	@mkdir -p $@ 
 
 check: $(LOG)
-	@for n in $^; \
+	@for test in $^ ; \
 	do \
-  		if echo 2 | cmp -s $$n; then \
- 	  		exit 2; \
+  		if [ "$$(cat $${test})" != "$(PASSED)" ] ; then \
+ 	  		exit 1; \
   	  	fi; \
 	done
 	
-$(LOG): $(TEST_DIR)/%.log: $(TEST_DIR)/%.in $(TEST_DIR)/%.out $(EXEC)
-    @if $(EXEC) $< | cmp -s $(TEST_DIR)/$*.out $@; then \
+$(TEST_DIR)/%.log: $(TEST_DIR)/%.in $(TEST_DIR)/%.out $(EXEC)
+    @if [ "$$(./$(EXEC) ./$<)" = "$$(cat $(word 2, $^))" ] ; then \
 		echo Test $* - was successful; \
-        echo 1 > $@; \
+        echo "$(PASSED)" > $@ ; \
 	else \
 		echo Test $* - was failed; \
-		echo 2 > $@; \
+		echo "$(FAILED)" > $@ ;
 	fi
 
 clean:
