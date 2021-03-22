@@ -8,7 +8,7 @@ char *infile;
 FILE *inptr;
 
 
-size_t strings_count(void)  { // функция подсчета количества строк для вывода в поток
+size_t strings_count(void)  { // функция подсчета количества строк в файле
 	int c = 0; 
 	int endfile = EOF;
 	size_t lines_count = 0; 
@@ -18,7 +18,6 @@ size_t strings_count(void)  { // функция подсчета количес�
 		if (c == '\n') ++lines_count;
 	}
 	if (endfile != '\n' && endfile != EOF) ++lines_count;
-	if (lines_count > MAX_STRING_NUM) lines_count = MAX_STRING_NUM; // Нам нужно 100 строк или меньше
 	return lines_count;
 }
 
@@ -59,14 +58,14 @@ int main(int argc, char* argv[]) {
         printf("The needed command format: task7 input.txt\n");
         return 0;
     }
-    // Чтение команды ввода с консоли и обработка ошибок в этой команде
+    // Чтение команды ввода с консоли
 	infile = argv[1]; 
     inptr = fopen(infile, "r");   // Открытие файла на чтение
     if (inptr == NULL) {
         printf("Could not open %s.\n", infile);
         return -1;
     }
-	size_t strings_number = strings_count();   // количество строк для вывода в поток
+	size_t strings_number = strings_count();   // количество строк в файле
 	rewind(inptr);
     // выделение памяти для массива, который будет содержать строки из файла и заполнение его
     char **strings_array = (char**)malloc(strings_number * (MAX_STRING_LEN+2)); //+2 (для fgets)возможные символы новой и нулевой строки
@@ -77,13 +76,18 @@ int main(int argc, char* argv[]) {
     }
     fclose(inptr);
 	delete_punctuation(strings_array, strings_number);  // вызов функции удаления знаков препинания
+
 	if (strings_number > 1)  { // пропустим сортировку, если строка всего одна
     	sort(strings_array, strings_number);  // вызов функции сортировки
 	}
+	size_t input_strings_number;
+	if (strings_number > MAX_STRING_NUM) 
+		input_strings_number = MAX_STRING_NUM;
+	else
+		input_strings_number = strings_number;
 
-	for (size_t i = 0; i < strings_number; i++) {  // запись строк в поток вывода и освобождение памяти
+	for (size_t i = 0; i < input_strings_number; i++) {  // запись строк в поток вывода и освобождение памяти
 		printf("%s", strings_array[i]);
-//		puts(strings_array[i]);
 		free(strings_array[i]);
     }
 
