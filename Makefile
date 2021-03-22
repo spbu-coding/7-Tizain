@@ -23,14 +23,14 @@ $(BUILD_DIR):
 
 check: $(LOG)
 	@for test in $^; \
-	do \
+    do \
   		if [ "$$(cat $${test})" != "$(PASSED)" ]; then \
  	  		exit 1; \
   	  	fi; \
 	done
 	
 $(TEST_DIR)/%.log: $(TEST_DIR)/%.in $(TEST_DIR)/%.out $(EXEC)
-    @if [ "$$(./$(EXEC) ./$<)" = "$$(cat $(word 2, $^))" ]; then \
+	@if [ "$$(./$(EXEC) ./$<)" = "$$(cat $(word 2, $^))" ]; then \
 		echo "Test $< - was successful"; \
         echo "$(PASSED)" > $@; \
 	else \
